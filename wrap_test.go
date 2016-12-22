@@ -10,6 +10,10 @@ import (
 	"testing"
 )
 
+func init() {
+	TraceEnvConfig()
+}
+
 func header() http.Header {
 	var h http.Header = make(http.Header)
 	h["Content-Type"] = []string{"text/plain; charset=utf-8"}
