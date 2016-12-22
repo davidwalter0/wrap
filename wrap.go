@@ -3,57 +3,36 @@ package wrap
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	trace "github.com/davidwalter0/tracer"
 )
 
 var tracer = trace.New()
 
-// // Pass a context with a timeout to tell a blocking function that it
-// // should abandon its work after the timeout elapses.
-// ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-
-// select {
-// case <-time.After(1 * time.Second):
-// 	fmt.Println("overslept")
-// case <-ctx.Done():
-// 	fmt.Println(ctx.Err()) // prints "context deadline exceeded"
-// }
-
-// // Even though ctx should have expired already, it is good
-// // practice to call its cancelation function in any case.
-// // Failure to do so may keep the context and its parent alive
-// // longer than necessary.
-// cancel()
-
-// type WithContext func(context.Context, http.Handler) http.Handler
-
-// // ServeHTTP satisies the http.Handler interface.
-// func (fn WithContext) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-// 	fn(ctx, w, r)
-// }
-
-/*
 func HttpScopedBufferHandler(handler http.Handler) http.Handler {
 	switch strings.ToLower(os.Getenv("WRAP_BUFFER_HANDLER")) {
-	case "bphandler":
+	case "pool", "pooledhandler", "bphandler":
 		return HttpScopedBPHandlerWriter(handler)
-
 	case "", "default", "bytes.buffer", "buffer":
 		fallthrough
 	default:
 		return HttpScopedHandlerWriter(handler)
 	}
 }
-*/
 
 // use a buffer buffer pools buffer then write/flush the buffer to the ResponseWriter.
 func HttpScopedBPHandlerWriter(handler http.Handler) http.Handler {
 	defer tracer.Detailed(detail).Enable(enable).ScopedTrace()()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		buffer := NewBufferPoolWriter(w)
+		var text string
+		if enable {
+			text = fmt.Sprintf("%v %p", buffer, buffer)
+		}
 		defer buffer.BPFlushAll()
-		defer tracer.Detailed(detail).Enable(enable).ScopedTrace(fmt.Sprintf("%v %p", buffer, buffer))()
+		defer tracer.Detailed(detail).Enable(enable).ScopedTrace(text)()
 		handler.ServeHTTP(buffer, r)
 	})
 }
@@ -63,8 +42,12 @@ func HttpScopedHandlerWriter(handler http.Handler) http.Handler {
 	defer tracer.Detailed(detail).Enable(enable).ScopedTrace()()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		buffer := NewBufferWriter(w)
+		var text string
+		if enable {
+			text = fmt.Sprintf("%v %p", buffer, buffer)
+		}
 		defer buffer.FlushAll()
-		defer tracer.Detailed(detail).Enable(enable).ScopedTrace(fmt.Sprintf("%v %p", buffer, buffer))()
+		defer tracer.Detailed(detail).Enable(enable).ScopedTrace(text)()
 		handler.ServeHTTP(buffer, r)
 	})
 }

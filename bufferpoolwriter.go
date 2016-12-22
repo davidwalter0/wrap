@@ -11,6 +11,10 @@ var BP *bpool.SizedBufferPool
 var BPSize = 32
 var BPAlloc = 16384
 
+func EnableTrace(e bool) {
+	enable = e
+}
+
 func BufferPool() *bpool.SizedBufferPool {
 	if BP == nil {
 		BP = bpool.NewSizedBufferPool(BPSize, BPAlloc)

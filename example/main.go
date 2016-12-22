@@ -14,6 +14,11 @@ var detail = false
 var enable = false
 var tracer = trace.New()
 
+func EnableTrace(e bool) {
+	// enable = e
+	wrap.EnableTrace(e)
+}
+
 func main() {
 	log.SetFlags(0)
 	log.SetOutput(new(logWriter))
@@ -46,10 +51,13 @@ func main() {
 	handlerPanic := wrap.Chain(Time, A, B, A, RecoverFunc(Panicky))
 	// Panic / recover and write
 	handlerPanicky := wrap.ChainLinkWrap(Recover, Time, A, Panicky, B, A)
+	// enable trace to see call chain of tests
+	// EnableTrace(true)
 
 	http.HandleFunc("/", handler.ServeHTTP)
 	http.HandleFunc("/panic", handlerPanic.ServeHTTP)
 	http.HandleFunc("/panicky", handlerPanicky.ServeHTTP)
+	http.Handle("/buffered", wrap.HttpScopedBufferHandler(handler))
 	err := http.ListenAndServe(listen, nil)
 	if err != nil {
 		fmt.Println(err)
