@@ -10,13 +10,19 @@ import (
 	"github.com/davidwalter0/wrap"
 )
 
-var detail = false
-var enable = false
-var tracer = trace.New()
+var tracer *trace.Tracer
 
-func EnableTrace(e bool) {
-	// enable = e
-	wrap.EnableTrace(e)
+func init() {
+	wrap.TraceEnvConfig()
+	tracer = wrap.Tracer()
+}
+
+// http.StatusMovedPermanently
+// http.StatusTemporaryRedirect
+func ChainRedirect(w http.ResponseWriter, r *http.Request) {
+	defer tracer.ScopedTrace("\n>> About to redirect <<\n")()
+	w.Write([]byte("\n>> About to redirect <<\n"))
+	http.Redirect(w, r, "/panic", http.StatusTemporaryRedirect)
 }
 
 func main() {
@@ -51,16 +57,16 @@ func main() {
 	handlerPanic := wrap.Chain(Time, A, B, A, RecoverFunc(Panicky))
 	// Panic / recover and write
 	handlerPanicky := wrap.ChainLinkWrap(Recover, Time, A, Panicky, B, A)
-	// enable trace to see call chain of tests
-	// EnableTrace(true)
 
-	http.HandleFunc("/", handler.ServeHTTP)
-	http.HandleFunc("/panic", handlerPanic.ServeHTTP)
-	http.HandleFunc("/panicky", handlerPanicky.ServeHTTP)
+	handlerRedirect := wrap.Chain(Time, ChainRedirect, A)
+
+	http.Handle("/text", handler)
+	http.Handle("/r", wrap.HttpScopedBufferHandler(handlerRedirect))
+	http.Handle("/panic", handlerPanic)
+	http.Handle("/panicky", handlerPanicky)
 	http.Handle("/buffered", wrap.HttpScopedBufferHandler(handler))
 	err := http.ListenAndServe(listen, nil)
 	if err != nil {
 		fmt.Println(err)
 	}
-
 }

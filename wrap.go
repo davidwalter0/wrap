@@ -5,11 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	trace "github.com/davidwalter0/tracer"
 )
-
-var tracer = trace.New()
 
 func HttpScopedBufferHandler(handler http.Handler) http.Handler {
 	switch strings.ToLower(os.Getenv("WRAP_BUFFER_HANDLER")) {

@@ -1,8 +1,11 @@
 package wrap
 
 import (
-	"github.com/oxtoacart/bpool"
 	"net/http"
+	"os"
+
+	trace "github.com/davidwalter0/tracer"
+	"github.com/oxtoacart/bpool"
 )
 
 var detail = false
@@ -11,8 +14,31 @@ var BP *bpool.SizedBufferPool
 var BPSize = 32
 var BPAlloc = 16384
 
-func EnableTrace(e bool) {
+var tracer *trace.Tracer
+
+// turn on call trace for debug and testing
+func TraceEnvConfig() bool {
+	switch os.Getenv("WRAP_BUFFER_TRACE_ENABLE") {
+	case "enable", "true", "1", "ok", "ack", "on":
+		return EnableTrace(true)
+	case "disable", "false", "0", "nak", "off":
+		fallthrough
+	default:
+		return EnableTrace(false)
+	}
+}
+
+func init() {
+	tracer = trace.New()
+}
+
+func Tracer() *trace.Tracer {
+	return tracer
+}
+
+func EnableTrace(e bool) bool {
 	enable = e
+	return e
 }
 
 func BufferPool() *bpool.SizedBufferPool {

@@ -82,21 +82,21 @@ func body() *bytes.Buffer {
 }
 
 func b(w http.ResponseWriter, r *http.Request) {
-	defer tracer.Enable(enable).ScopedTrace()()
+	defer tracer.ScopedTrace()()
 	w.Write([]byte(" [B: This is more text] "))
 }
 
 var B = http.HandlerFunc(b)
 
 func a(w http.ResponseWriter, r *http.Request) {
-	defer tracer.Enable(enable).ScopedTrace()()
+	defer tracer.ScopedTrace()()
 	w.Write(body().Bytes())
 }
 
 var A = http.HandlerFunc(a)
 
 func panicky(w http.ResponseWriter, r *http.Request) {
-	defer tracer.Enable(enable).ScopedTrace()()
+	defer tracer.ScopedTrace()()
 	panic(string([]byte(" going... <" + string(body().Bytes()) + " > going...")))
 	w.Write(body().Bytes())
 }
@@ -104,23 +104,23 @@ func panicky(w http.ResponseWriter, r *http.Request) {
 var Panicky = http.HandlerFunc(panicky)
 
 func (writer logWriter) Write(bytes []byte) (int, error) {
-	defer tracer.Detailed(detail).Enable(enable).ScopedTrace()()
+	defer tracer.ScopedTrace()()
 	return fmt.Printf(time.Now().UTC().Format(TimeForm) + " [DEBUG] TEST TEXT> \n")
 }
 
 func Time(w http.ResponseWriter, r *http.Request) {
-	defer tracer.Detailed(detail).Enable(enable).ScopedTrace()()
+	defer tracer.ScopedTrace()()
 	log.Printf(time.Now().UTC().Format(TimeForm) + " [DEBUG] TEST TEXT > \n")
 	fmt.Fprintf(w, time.Now().UTC().Format(TimeForm)+" [DEBUG] TEST TEXT > ")
 }
 
 func Recover(next http.Handler) http.Handler {
-	defer tracer.Detailed(detail).Enable(enable).ScopedTrace()()
+	defer tracer.ScopedTrace()()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer tracer.Detailed(detail).Enable(enable).ScopedTrace()()
+		defer tracer.ScopedTrace()()
 		defer func() {
-			defer tracer.Detailed(detail).Enable(enable).ScopedTrace()()
+			defer tracer.ScopedTrace()()
 			err := recover()
 			if err != nil {
 				fmt.Fprintf(w, " >>>%v<<< ", err)
@@ -131,6 +131,6 @@ func Recover(next http.Handler) http.Handler {
 }
 
 func RecoverFunc(next http.HandlerFunc) http.HandlerFunc {
-	defer tracer.Detailed(detail).Enable(enable).ScopedTrace()()
+	defer tracer.ScopedTrace()()
 	return Recover(next).(http.HandlerFunc)
 }
