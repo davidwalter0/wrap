@@ -3,6 +3,7 @@ package wrap
 import (
 	"net/http"
 	"os"
+	"strings"
 
 	trace "github.com/davidwalter0/tracer"
 	"github.com/oxtoacart/bpool"
@@ -18,10 +19,10 @@ var tracer *trace.Tracer
 
 // turn on call trace for debug and testing
 func TraceEnvConfig() bool {
-	switch os.Getenv("WRAP_BUFFER_TRACE_ENABLE") {
-	case "enable", "true", "1", "ok", "ack", "on":
+	switch strings.ToLower(os.Getenv("WRAP_BUFFER_TRACE_ENABLE")) {
+	case "enable", "true", "1", "ok", "ack", "on", "yes":
 		return EnableTrace(true)
-	case "disable", "false", "0", "nak", "off":
+	case "disable", "false", "0", "nak", "off", "no":
 		fallthrough
 	default:
 		return EnableTrace(false)
